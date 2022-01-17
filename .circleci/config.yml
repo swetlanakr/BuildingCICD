@@ -19,7 +19,7 @@ jobs:
 
   print_world:
     docker:
-      - Image: circleci/node:13.8.0
+      - image: circleci/node:13.8.0
       steps:
       - run: echo world
 
