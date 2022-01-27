@@ -11,60 +11,36 @@ orbs:
   # Declare a dependency on the welcome-orb
   welcome: circleci/welcome-orb@0.4.1
 # Orchestrate or schedule a set of jobs
+
 jobs:
-  print_hello:
+  configure_infrastructure:
     docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - run: echo hello
-  print_world:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - run: echo world
-  print_myName:
-    docker:      
-      - image: circleci/node:13.8.0
-    steps:
-      - run:
-          name: "echo an env var that is part of our project"
-          command: |
-            echo $MY_ENV_NAME
-  save_hello_world_output:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - run: echo "hello world" > ~/output.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - output.txt
-  print_circle_workflow_id:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - print_pipeline_id
-
-  print_output_file:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - attach_workspace:
-          at: ~/
-      - run: cat ~/output.txt
-
-  create_infrastructure:
-    docker:
-      - image: amazon/aws-cli
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints: ["fa:85:2d:26:7e:21:6f:61:30:01:30:1b:4d:ab:a7:e4"]
       - run:
-          name: Create Cloudformation Stack
+          name: Install Ansible
           command: |
-            aws cloudformation deploy \
-              --template-file template.yml \
-              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
+            apk add --update ansible
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            ansible-playbook -i inventory.txt main.yml
+
+#  create_infrastructure:
+#    docker:
+#      - image: amazon/aws-cli
+#    steps:
+#      - checkout
+#      - run:
+#          name: Create Cloudformation Stack
+#          command: |
+#            aws cloudformation deploy \
+#              --template-file template.yml \
+#              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+#             --region us-east-1
 
 
 # Invoke jobs via workflows
@@ -74,4 +50,4 @@ workflows:
   welcome:
     # Run the welcome/run job in its own container
     jobs:
-      - create_infrastructure
+      - configure_infrastructure
