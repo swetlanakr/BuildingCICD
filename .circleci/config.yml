@@ -52,7 +52,7 @@ jobs:
       - run:
           name: Test job
           command: return 1
-      - destory_environment
+      - destroy_environment
 
 
 # Invoke jobs via workflows
