@@ -3,10 +3,13 @@ version: 2.1
 # Use a package of configuration called an orb.
 
 commands:
-  print_pipeline_id:
-    description: "Prints out the Circle CI Workflow ID from its environment variable"
+  destory_environment:
     steps:
-      - run: echo $CIRCLE_WORKFLOW_ID
+      - run:
+          name: Destroy environment
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0.7}
 orbs:
   # Declare a dependency on the welcome-orb
   welcome: circleci/welcome-orb@0.4.1
@@ -29,34 +32,27 @@ jobs:
 #          command: |
 #            ansible-playbook -i inventory.txt main.yml
 
+  create_infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws cloudformation deploy \
+              --template-file template.yml \
+              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+             --region us-east-1
+
     smoke_test:
       docker:
         - image: alpine:latest
       steps:
-        - run: apk add --update curl
         - run:
-            name: smoke test
-            command: |
-              URL="https://blog.udacity.com/"
-              if curl -s --head ${URL}
-              then
-                return 0
-              else
-                return 1
-              fi
-
-#  create_infrastructure:
-#    docker:
-#      - image: amazon/aws-cli
-#    steps:
-#      - checkout
-#      - run:
-#          name: Create Cloudformation Stack
-#          command: |
-#            aws cloudformation deploy \
-#              --template-file template.yml \
-#              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-#             --region us-east-1
+            name: Test job
+            command: return 1
+        - destory_environment
 
 
 # Invoke jobs via workflows
@@ -66,4 +62,5 @@ workflows:
   welcome:
     # Run the welcome/run job in its own container
     jobs:
+      - create_infrastructure
       - smoke_test
