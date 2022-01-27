@@ -45,14 +45,14 @@ jobs:
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
              --region us-east-1
 
-    smoke_test:
-      docker:
-        - image: alpine:latest
-      steps:
-        - run:
-            name: Test job
-            command: return 1
-        - destory_environment
+  smoke_test:
+    docker:
+      - image: alpine:latest
+    steps:
+      - run:
+          name: Test job
+          command: return 1
+      - destory_environment
 
 
 # Invoke jobs via workflows
